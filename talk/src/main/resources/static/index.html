@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="./jquery-3.5.1.js"></script>
+    <link type="text/css" href="./style.css" rel="stylesheet">
+</head>
+<body>
+<div>
+    <div id="message-template" hidden>
+    <p class="message-content"></p>
+</div>
+    <form>
+        <label class="chat-num">
+        </label>
+        <input type="text" class="chat-message">
+        <button type="button" class="send-message">send</button>
+    </form>
+    <div class="message-container"></div>
+</div>
+<script type="application/javascript">
+    var websocket = null;
+    var chatNum = $('.chat-num').text();
+    if('WebSocket' in window){
+        websocket=new WebSocket('ws://localhost:8080/chat/webSocket');
+    }else{
+        alert('该浏览器不支持websocket');
+    }
+    websocket.onopen=function(event){
+        console.log('websocket建立连接');
+    };
+    websocket.onclose=function(event){
+        console.log("websocket关闭连接");
+    };
+    websocket.onmessage=function(event){
+        console.log('websocket收到消息'+event.data);
+        var result=$.parseJSON(event.data);
+        if(result.type===3){
+            console.log(result);
+            var element=document.getElementById('message-template').innerHTML;
+            $('.message-container').append(element);
+            $('.message-content:last').html(result.message);
+        }else{
+            $('.chat-num').text(result.userNum);
+        }
+    };
+    websocket.onerror=function(event){
+        console.log('websocket通信发生错误');
+    };
+    window.onbeforeunload=function(event){
+        websocket.close();
+    };
+    $('.send-message').click(function(){
+        var message=$('.chat-message').val();
+        if(!message){
+            alert('请输入要发送的消息');
+            return;
+        }
+        sendMessage(message);
+        $('.chat-message').val("");
+    });
+    function sendMessage(message){
+       websocket.send(message);
+    }
+</script>
+</body>
+</html>
